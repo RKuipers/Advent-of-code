@@ -1,16 +1,51 @@
 import time
 
+
 def parseA(file):
-    pass
+    with open(file) as f:
+        lines = f.readlines()
+
+    splits = [l.split(" ") for l in lines]
+    return [(int(l[0][:-1]), [int(x) for x in l[1:]]) for l in splits]
+
 
 def parseB(file):
     return parseA(file)
 
+
+def checkA(final, vals, partial):
+    if len(vals) == 0:
+        return final == partial
+    if partial > final:
+        return False
+    return checkA(final, vals[1:], vals[0] + partial) or checkA(
+        final, vals[1:], vals[0] * partial
+    )
+
+
+def cc(x, y):
+    return int(str(x) + str(y))
+
+
+def checkB(final, vals, partial):
+    if len(vals) == 0:
+        return final == partial
+    if partial > final:
+        return False
+    return (
+        checkB(final, vals[1:], vals[0] + partial)
+        or checkB(final, vals[1:], vals[0] * partial)
+        or checkB(final, vals[1:], cc(partial, vals[0]))
+    )
+
+
 def d7a(parsed):
-    pass
+    return sum([k for (k, v) in parsed if checkA(k, v[1:], v[0])])
+
 
 def d7b(parsed):
-    pass
+    return sum([k for (k, v) in parsed if checkB(k, v[1:], v[0])])
+
 
 testfile = "2024/inputs/day7testinput.txt"
 file = "2024/inputs/day7input.txt"

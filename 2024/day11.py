@@ -1,16 +1,22 @@
 import time
+from utils import Coord
+
 
 def parseA(file):
     pass
 
+
 def parseB(file):
     return parseA(file)
+
 
 def d11a(parsed):
     pass
 
+
 def d11b(parsed):
     pass
+
 
 testfile = "2024/inputs/day11testinput.txt"
 file = "2024/inputs/day11input.txt"
