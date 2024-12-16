@@ -1,3 +1,7 @@
+from heapq import heappop, heappush
+
+MAXVAL = 2**31
+
 class Coord:
     def __init__(self, x, y):
         self.x = x
@@ -73,6 +77,39 @@ def DFS(v, graph, is_terminal, at_terminal, get_neighbors, discover, is_discover
         if not is_discovered(n, graph)
     ]
     return [r for n in neighbor_results for r in n]
+
+def a_star(start, goal, heuristic, get_neighbors, grid):
+    def reconstruct(cameFrom, current):
+        total_path = [current]
+        currents = [current]
+        while len(currents) > 0:
+            current = currents.pop()
+            if current in cameFrom.keys():
+                currents += cameFrom[current]
+                total_path += cameFrom[current]
+        return total_path
+
+    openset = []
+    heappush(openset, (0, start))
+    cameFrom = {}
+    gScore = {start: 0}
+
+    while len(openset) > 0:
+        curr_fScore, current = heappop(openset)
+        if current[0] == goal:
+            return gScore[current], reconstruct(cameFrom, current)
+        neighbors = get_neighbors(current, grid)
+        for (d, n) in neighbors:
+            tentative_gScore = gScore[current] + d
+            if gScore.get(n, MAXVAL) > tentative_gScore:
+                cameFrom[n] = [current]
+                gScore[n] = tentative_gScore
+                if not n in {x[1] for x in openset}:
+                    heappush(openset, (tentative_gScore + heuristic(n, goal), n))
+            elif gScore.get(n, MAXVAL) == tentative_gScore:
+                cameFrom[n].append(current)
+
+    return MAXVAL
 
 
 class Counter:
