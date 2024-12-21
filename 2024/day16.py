@@ -114,11 +114,9 @@ def get_neighbors(current, walls):
 def d16a(parsed):
     start, end, walls = parsed
     dir = Coord(1, 0)
-    score, path = a_star(
+    score, path = a_star_local(
         (start, dir),
         end,
-        heuristic,
-        get_neighbors,
         walls,
     )
     return score, path

@@ -2,6 +2,7 @@ from heapq import heappop, heappush
 
 MAXVAL = 2**31
 
+
 class Coord:
     def __init__(self, x, y):
         self.x = x
@@ -43,6 +44,12 @@ class Coord:
     def __repr__(self):
         return "Coord(%d, %d)" % (self.x, self.y)
 
+    def man_dis(self, o):
+        return abs(self.x - o.x) + abs(self.y - o.y)
+
+
+DIRS = [Coord(1, 0), Coord(-1, 0), Coord(0, -1), Coord(0, 1)]
+
 
 def BFS(root, graph, is_terminal, at_terminal, one_terminal, get_neighbors, set_parent):
     queue = [root]
@@ -78,15 +85,33 @@ def DFS(v, graph, is_terminal, at_terminal, get_neighbors, discover, is_discover
     ]
     return [r for n in neighbor_results for r in n]
 
-def a_star(start, goal, heuristic, get_neighbors, grid):
-    def reconstruct(cameFrom, current):
+
+def a_star(
+    start,
+    goal,
+    is_goal,
+    heuristic,
+    get_neighbors,
+    grid,
+    return_all=False,
+    max_score=MAXVAL,
+):
+    def reconstruct_one(cameFrom, current):
+        total_path = [current]
+        while current in cameFrom.keys():
+            current = cameFrom[current]
+            total_path.append(current)
+        return total_path
+
+    def reconstruct_all(cameFrom, current):
         total_path = [current]
         currents = [current]
         while len(currents) > 0:
             current = currents.pop()
-            if current in cameFrom.keys():
-                currents += cameFrom[current]
-                total_path += cameFrom[current]
+            if current in cameFrom:
+                prevs = cameFrom[current]
+                total_path = total_path + prevs
+                currents = currents + prevs
         return total_path
 
     openset = []
@@ -96,20 +121,28 @@ def a_star(start, goal, heuristic, get_neighbors, grid):
 
     while len(openset) > 0:
         curr_fScore, current = heappop(openset)
-        if current[0] == goal:
-            return gScore[current], reconstruct(cameFrom, current)
+        if is_goal(current):
+            if not return_all:
+                return gScore[current], reconstruct_one(cameFrom, current)
+            else:
+                return gScore[current], reconstruct_all(cameFrom, current)
         neighbors = get_neighbors(current, grid)
-        for (d, n) in neighbors:
-            tentative_gScore = gScore[current] + d
+        for n in neighbors:
+            tentative_gScore = gScore[current] + 1
+            if tentative_gScore > max_score:
+                continue
             if gScore.get(n, MAXVAL) > tentative_gScore:
-                cameFrom[n] = [current]
+                if return_all:
+                    cameFrom[n] = [current]
+                else:
+                    cameFrom[n] = current
                 gScore[n] = tentative_gScore
                 if not n in {x[1] for x in openset}:
                     heappush(openset, (tentative_gScore + heuristic(n, goal), n))
-            elif gScore.get(n, MAXVAL) == tentative_gScore:
+            elif gScore.get(n, MAXVAL) == tentative_gScore and return_all:
                 cameFrom[n].append(current)
 
-    return MAXVAL
+    return MAXVAL, []
 
 
 class Counter:

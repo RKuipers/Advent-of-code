@@ -1,21 +1,52 @@
 import time
+from functools import cache
 from utils import Coord
 
 
 def parseA(file):
-    pass
+    with open(file) as f:
+        lines = f.readlines()
+
+    towels = lines[0].strip().split(', ')
+
+    designs = [l.strip() for l in lines[2:]]
+
+    return towels, designs
 
 
 def parseB(file):
     return parseA(file)
 
 
+
 def d19a(parsed):
-    pass
+    @cache
+    def is_possible(design):
+        if design == "":
+            return True
+        for t in towels:
+            if design.startswith(t):
+                if is_possible(design.removeprefix(t)):
+                    return True
+        return False
+    towels, designs = parsed
+    possible = [is_possible(d) for d in designs]
+    return possible.count(True)
 
 
 def d19b(parsed):
-    pass
+    @cache
+    def count_possible(design):
+        possible = 0
+        if design == "":
+            return 1
+        for t in towels:
+            if design.startswith(t):
+                possible += count_possible(design.removeprefix(t))
+        return possible
+    towels, designs = parsed
+    possible = [count_possible(d) for d in designs]
+    return sum(possible)
 
 
 testfile = "2024/inputs/day19testinput.txt"
