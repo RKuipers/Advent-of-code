@@ -3,7 +3,36 @@ from utils import Coord
 
 
 def parseA(file):
-    pass
+    with open(file) as f:
+        lines = f.readlines()
+
+    keys = []
+    locks = []
+
+    fig = [0] * 5
+    is_key = None
+    for l in lines:
+        if l.strip() == "":
+            if is_key:
+                keys.append(fig)
+            else:
+                locks.append([c - 1 for c in fig])
+
+            fig = [0] * 5
+            is_key = None
+            continue
+        elif is_key is None:
+            is_key = "#" in l
+            continue
+        for i, c in enumerate(l):
+            if c == "#":
+                fig[i] += 1
+    if is_key:
+        keys.append(fig)
+    else:
+        locks.append([c - 1 for c in fig])
+    
+    return keys, locks
 
 
 def parseB(file):
@@ -11,11 +40,14 @@ def parseB(file):
 
 
 def d25a(parsed):
-    pass
+    keys, locks = parsed
+    return [all([k + l <= 5 for k, l in zip(k, l)]) for k in keys for l in locks].count(
+        True
+    )
 
 
 def d25b(parsed):
-    pass
+    print("Merry Christmas!")
 
 
 testfile = "2024/inputs/day25testinput.txt"
