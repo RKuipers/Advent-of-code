@@ -505,3 +505,8 @@ if __name__ == "__main__":
     make_histo_lean(top_tag_counts, "Top Tag Counts", "Tag")
     make_histo_lean(all_tag_counts, "Total Tag Counts", "Tag")
     make_histo_lean(genre_counts, "Genre Counts", "Genre")
+
+    # TODO:
+    # Add graph for release year
+    # Add graph for playtime/achievement
+    # Add graph for playtime/tag
