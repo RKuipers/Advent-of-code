@@ -25,6 +25,7 @@ cache = LocalCache(os.environ.get("CACHIFY_PATH", f"./cachify"))
 load_dotenv()
 STEAM_API_KEY = os.getenv("STEAM_API_KEY")
 STEAM_ID_64 = os.getenv("STEAM_ID_64")
+RESULT_FOLDER = "steam_analysis_graphs/"
 
 
 KNOWN_MISSING_GAMES = [
@@ -48,6 +49,7 @@ MISSING_RELEASE_DATES = {
     "1... 2... 3... KICK IT! (Drop That Beat Like an Ugly Baby)": dt.datetime(
         2011, 4, 1, 0, 0
     ),
+    "Myst": dt.datetime(2021, 8, 26, 0, 0),
 }
 
 
@@ -248,12 +250,33 @@ def get_genre_counts(games, genre_threshold=0):
     return dict(sorted(filtered_genre_counts.items(), key=lambda x: x[1], reverse=True))
 
 
+def get_playtime_per_tag(games, top_tags_per_game=0, tag_threshold=0):
+    tag_playtime = {
+        tag: 0
+        for game in [game["tags"] for game in games.values() if len(game["tags"]) > 0]
+        for tag in game.keys()
+    }
+    for game in games.values():
+        if len(game["tags"]) > 0:
+            if top_tags_per_game == 0:
+                for tag in list(game["tags"].keys()):
+                    tag_playtime[tag] = tag_playtime[tag] + game["playtime"] / 60
+            else:
+                for tag in list(game["tags"].keys())[:top_tags_per_game]:
+                    tag_playtime[tag] = tag_playtime[tag] + game["playtime"] / 60
+    filtered_tag_playtime = {
+        tag: time for tag, time in tag_playtime.items() if time >= tag_threshold
+    }
+    return dict(sorted(filtered_tag_playtime.items(), key=lambda x: x[1], reverse=True))
+
+
 def make_histo(
     data,
     title: str,
     xlabel: str,
+    min_value: int = None,
     max_value: int = None,
-    bin_size: int = None,
+    bin_size: int = 1,
     show_top: int = 0,
     top_text: str = "",
     reverse_top: bool = False,
@@ -269,11 +292,13 @@ def make_histo(
         standard_data_values = [p for p in data_values if p < max_value]
         outlier_count = len(data_values) - len(standard_data_values)
     else:
-        standard_data_values = data_values
+        standard_data_values = list(data_values)
         outlier_count = 0
+        max_value = max(data_values)
 
     # 2. Determine Bin Edges for Standard Data
-    min_value = 0
+    if min_value is None:
+        min_value = min(data_values)
 
     # The last standard bin edge must be exactly max_value
     # Use standard_data_values to ensure the last bin covers up to max_value
@@ -301,10 +326,16 @@ def make_histo(
     for i in range(len(bin_edges) - 1):
         lower = int(bin_edges[i])
         upper = int(bin_edges[i + 1])
-        x_labels.append(f"{lower}-{upper}")
+        if bin_size == 1:
+            x_labels.append(f"{lower}")
+        else:
+            x_labels.append(f"{lower}-{upper}")
 
     # Label for the final outlier bin
-    x_labels.append(f"{max_value}+")
+    if max(data_values) <= max_value:
+        x_labels.append(f"{max_value}")
+    else:
+        x_labels.append(f"{max_value}+")
 
     # 5. Plot the Data
 
@@ -347,8 +378,8 @@ def make_histo(
         )
 
     plt.tight_layout()
-    plt.show()
-    fig.savefig(title)
+    # plt.show()
+    fig.savefig(RESULT_FOLDER + title)
 
 
 def make_histo_lean(data, title: str, x_axis_label: str):
@@ -362,8 +393,8 @@ def make_histo_lean(data, title: str, x_axis_label: str):
         x_axis_label=x_axis_label,
     )
     plt.tight_layout()
-    plt.show()
-    fig.savefig(title)
+    # plt.show()
+    fig.savefig(RESULT_FOLDER + title)
 
 
 def plot_histo(
@@ -399,6 +430,7 @@ def plot_histo(
                 "%d" % int(height),
                 ha="center",
                 va="bottom",
+                #rotation="vertical",
             )
 
 
@@ -462,8 +494,8 @@ def make_str_histo(game_names: list):
             )
 
     plt.tight_layout()
-    plt.show()
-    fig.savefig("Starting Character")
+    # plt.show()
+    fig.savefig(RESULT_FOLDER + "Starting Character")
 
 
 if __name__ == "__main__":
@@ -476,6 +508,7 @@ if __name__ == "__main__":
     top_tag_counts = get_tag_counts(games_with_metadata, 3, 2)
     all_tag_counts = get_tag_counts(games_with_metadata, 0, 10)
     genre_counts = get_genre_counts(games_with_metadata, 0)
+    playtime_per_tag = get_playtime_per_tag(games_with_metadata, 5, 100)
 
     # Plot data
     make_histo(
@@ -485,9 +518,9 @@ if __name__ == "__main__":
         title="Playtime",
         xlabel="Playtime",
         bin_size=10,
-        max_value=260,
-        show_top=5,
-        top_text="**Top 5 Games by playtime in hours**",
+        max_value=250,
+        show_top=10,
+        top_text="**Top 10 Games by playtime in hours**",
     )
     make_histo(
         data={
@@ -501,12 +534,26 @@ if __name__ == "__main__":
         show_top=5,
         top_text="**Top 5 Games by number of achievements**",
     )
+    make_histo(
+        data={game["name"]: game["date"].year for game in games_with_metadata.values()},
+        title="Release Year",
+        xlabel="Year",
+    )
+    make_histo(
+        data={
+            game["name"]: game["playtime"] / game["total_achieves"]
+            for game in games_with_metadata.values()
+        },
+        title="Playtime per Achievement",
+        xlabel="Minutes/Achievement",
+        bin_size=10,
+        min_value=0,
+        max_value=300,
+        show_top=10,
+        top_text="**Top 10 Games by time per achievement**",
+    )
     make_str_histo([game["name"] for game in games_with_metadata.values()])
     make_histo_lean(top_tag_counts, "Top Tag Counts", "Tag")
     make_histo_lean(all_tag_counts, "Total Tag Counts", "Tag")
     make_histo_lean(genre_counts, "Genre Counts", "Genre")
-
-    # TODO:
-    # Add graph for release year
-    # Add graph for playtime/achievement
-    # Add graph for playtime/tag
+    make_histo_lean(playtime_per_tag, "Playtime per Tag", "Tag")
