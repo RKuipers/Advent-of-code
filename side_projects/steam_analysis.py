@@ -529,6 +529,7 @@ if __name__ == "__main__":
         title="Number of Achievements",
         xlabel="Achievements",
         bin_size=5,
+        min_value=0,
         max_value=100,
         show_top=5,
         top_text="**Top 5 Games by number of achievements**",
