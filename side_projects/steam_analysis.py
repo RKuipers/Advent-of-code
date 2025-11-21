@@ -430,7 +430,6 @@ def plot_histo(
                 "%d" % int(height),
                 ha="center",
                 va="bottom",
-                #rotation="vertical",
             )
 
 
