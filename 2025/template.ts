@@ -1,5 +1,6 @@
 import * as A from "fp-ts/lib/Array.js";
-import { pipe } from "fp-ts/lib/function.js";
+import * as E from "fp-ts/lib/Either.js";
+import { flow, pipe } from "fp-ts/lib/function.js";
 import * as N from "fp-ts/lib/number.js";
 import * as O from "fp-ts/lib/Option.js";
 import * as R from "fp-ts/lib/Record.js";
@@ -14,6 +15,8 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
   try {
     const data = await fs.readFile(path.resolve(filePath), "utf8");
     const lines = data.split("\n").filter((line) => line.trim() !== ""); // Read and filter empty lines
+
+    // UPDATE FROM HERE
 
     const llist: number[] = [];
     const rlist: number[] = [];
@@ -35,6 +38,9 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 // --- Part A Logic ---
 
 const d1a = (parsed: ParseType): number => {
+  // UPDATE FROM HERE
+  // USE parsed.x if parsed type is an object
+
   const lsorted = A.sort(N.Ord)(parsed.llist);
   const rsorted = A.sort(N.Ord)(parsed.rlist);
 
@@ -47,6 +53,9 @@ const d1a = (parsed: ParseType): number => {
 // --- Part B Logic ---
 
 const d1b = (parsed: ParseType): number => {
+  // UPDATE FROM HERE
+  // USE parsed.x if parsed type is an object
+
   const count = (l: Array<number>) =>
     A.reduce({} as Record<string, number>, (r, n: number) => {
       const v = R.lookup(n.toString(), r);
@@ -92,3 +101,15 @@ async function main() {
 }
 
 main(); // Uncomment to run
+
+// --- Just for importing ---
+const uncalled = () => {
+  type opt<A> = O.Option<A>;
+  type eth<E, A> = E.Either<E, A>;
+  const x = pipe(
+    [],
+    A.map(() => ["", 0] as const satisfies [string, number]),
+    R.fromEntries
+  );
+  const y = flow;
+};

@@ -27,19 +27,19 @@ async function readAndParseData(filePath) {
     }
 }
 // --- Part A Logic ---
-const d1a = (llist, rlist) => {
-    const lsorted = A.sort(N.Ord)(llist);
-    const rsorted = A.sort(N.Ord)(rlist);
+const d1a = (parsed) => {
+    const lsorted = A.sort(N.Ord)(parsed.llist);
+    const rsorted = A.sort(N.Ord)(parsed.rlist);
     return pipe(A.zip(lsorted)(rsorted), A.foldMap(N.MonoidSum)(([a, b]) => Math.abs(a - b)));
 };
 // --- Part B Logic ---
-const d1b = (llist, rlist) => {
+const d1b = (parsed) => {
     const count = (l) => A.reduce({}, (r, n) => {
         const v = R.lookup(n.toString(), r);
         return R.upsertAt(n.toString(), O.isSome(v) ? v.value + 1 : 1)(r);
     })(l);
-    const lcounts = count(llist);
-    const rcounts = count(rlist);
+    const lcounts = count(parsed.llist);
+    const rcounts = count(parsed.rlist);
     const products = R.intersection(N.MonoidProduct)(rcounts)(lcounts);
     return pipe(products, R.toArray, A.foldMap(N.MonoidSum)(([k, v]) => Number(k) * v));
 };
@@ -48,11 +48,11 @@ async function main() {
     const file = "inputs/day1input_2024.txt";
     try {
         const startParse = performance.now();
-        const { llist, rlist } = await readAndParseData(file);
+        const parsed = await readAndParseData(file);
         const startA = performance.now();
-        const resultA = d1a(llist, rlist);
+        const resultA = d1a(parsed);
         const startB = performance.now();
-        const resultB = d1b(llist, rlist);
+        const resultB = d1b(parsed);
         const end = performance.now();
         console.log(resultA);
         console.log(resultB);
