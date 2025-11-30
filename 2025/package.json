@@ -1,0 +1,22 @@
+{
+  "name": "advent-of-code",
+  "type": "module",
+  "scripts": {
+    "start-day": "node --loader ts-node/esm --no-warnings --project tsconfig.json $(npx which ts-node) $@",
+    "build": "npx tsc"
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "day1.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fp-ts": "^2.16.11"
+  }
+}
