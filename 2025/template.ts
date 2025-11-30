@@ -8,6 +8,7 @@ import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
 
 type ParseType = { llist: number[]; rlist: number[] };
+const dayNumber = 1;
 
 // --- Data Preparation Helper ---
 
@@ -37,7 +38,7 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 // --- Part A Logic ---
 
-const d1a = (parsed: ParseType): number => {
+const partA = (parsed: ParseType): number => {
   // UPDATE FROM HERE
   // USE parsed.x if parsed type is an object
 
@@ -52,7 +53,7 @@ const d1a = (parsed: ParseType): number => {
 
 // --- Part B Logic ---
 
-const d1b = (parsed: ParseType): number => {
+const partB = (parsed: ParseType): number => {
   // UPDATE FROM HERE
   // USE parsed.x if parsed type is an object
 
@@ -77,17 +78,17 @@ const d1b = (parsed: ParseType): number => {
 // --- Execution ---
 
 async function main() {
-  const file = "inputs/day1input_2024.txt";
+  const file = `inputs/day${dayNumber}input.txt`;
 
   try {
     const startParse = performance.now();
     const parsed = await readAndParseData(file);
 
     const startA = performance.now();
-    const resultA = d1a(parsed);
+    const resultA = partA(parsed);
 
     const startB = performance.now();
-    const resultB = d1b(parsed);
+    const resultB = partB(parsed);
     const end = performance.now();
 
     console.log(resultA);
