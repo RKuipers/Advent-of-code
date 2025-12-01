@@ -5,7 +5,7 @@ import * as O from "fp-ts/lib/Option.js";
 import * as R from "fp-ts/lib/Record.js";
 import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
-import { modulo } from "./utils.js";
+import * as U from "./utils.js";
 const dayNumber = 1;
 // --- Data Preparation Helper ---
 async function readAndParseData(filePath) {
@@ -64,6 +64,6 @@ main(); // Uncomment to run
 // --- Just for importing ---
 const uncalled = () => {
     const x = pipe([], A.map(() => ["", 0]), R.fromEntries);
-    const y = flow((x) => modulo(x, 5));
+    const y = flow((x) => U.modulo(x, 5));
 };
 //# sourceMappingURL=template.js.map
