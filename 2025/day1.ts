@@ -5,9 +5,8 @@ import * as O from "fp-ts/lib/Option.js";
 import * as R from "fp-ts/lib/Record.js";
 import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
-import * as U from "./utils.js";
 
-type ParseType = { llist: number[]; rlist: number[] };
+type ParseType = Array<number>;
 const dayNumber = 1;
 
 // --- Data Preparation Helper ---
@@ -19,17 +18,14 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
     // UPDATE FROM HERE
 
-    const llist: number[] = [];
-    const rlist: number[] = [];
+    const list: number[] = [];
 
     for (const line of lines) {
-      const parts = line.trim().split(/\s+/); // Split by one or more spaces
-      if (parts.length === 2) {
-        llist.push(parseInt(parts[0]!, 10));
-        rlist.push(parseInt(parts[1]!, 10));
-      }
+      const l = line.trim();
+      if (l[0] === "R") list.push(parseInt(l.slice(1)));
+      else list.push(-1 * parseInt(l.slice(1)));
     }
-    return { llist, rlist };
+    return list;
   } catch (error) {
     console.error("Error reading file:", error);
     throw error;
@@ -38,19 +34,31 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 // --- Part A Logic ---
 
-const partA = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
-
-  return 0;
-};
+const partA = flow(
+  A.reduce({ count: 0, current: 50 }, (acc, v: number) => {
+    const next = (acc.current + v) % 100;
+    return { count: next === 0 ? acc.count + 1 : acc.count, current: next };
+  }),
+  ({ count }) => count
+);
 
 // --- Part B Logic ---
 
-const partB = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
+const partB = flow(
+  A.reduce({ count: 0, current: 50 }, (acc, v: number) => {
+    const fullTurns = Math.floor(Math.abs(v) / 100);
+    const rem = v % 100;
+    const next = acc.current + rem;
+    const newCount =
+      fullTurns + ((next <= 0 && acc.current !== 0) || next >= 100 ? 1 : 0);
 
-  return 0;
-};
+    return {
+      count: acc.count + newCount,
+      current: next < 0 ? 100 + next : next % 100,
+    };
+  }),
+  ({ count }) => count
+);
 
 // --- Execution ---
 
@@ -89,5 +97,5 @@ const uncalled = () => {
     A.map(() => ["", 0] as const satisfies [string, number]),
     R.fromEntries
   );
-  const y = flow((x: number) => U.modulo(x, 5));
+  const y = flow;
 };
