@@ -1,13 +1,20 @@
 import * as A from "fp-ts/lib/Array.js";
+import * as B from "fp-ts/lib/boolean.js";
 import * as E from "fp-ts/lib/Either.js";
 import { flow, pipe } from "fp-ts/lib/function.js";
+import { concatAll } from "fp-ts/lib/Monoid.js";
+import * as NEA from "fp-ts/lib/NonEmptyArray.js";
+import * as N from "fp-ts/lib/number.js";
 import * as O from "fp-ts/lib/Option.js";
 import * as R from "fp-ts/lib/Record.js";
 import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
 import * as U from "./utils.js";
 
-type ParseType = { llist: number[]; rlist: number[] };
+// npx tsc && node dist/day1.js
+
+type Entry = number;
+type ParseType = Array<Entry>;
 const dayNumber = 1;
 
 // --- Data Preparation Helper ---
@@ -19,17 +26,15 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
     // UPDATE FROM HERE
 
-    const llist: number[] = [];
-    const rlist: number[] = [];
+    const result: number[] = [];
 
     for (const line of lines) {
       const parts = line.trim().split(/\s+/); // Split by one or more spaces
-      if (parts.length === 2) {
-        llist.push(parseInt(parts[0]!, 10));
-        rlist.push(parseInt(parts[1]!, 10));
-      }
+      result.push(parts.length);
     }
-    return { llist, rlist };
+    return result;
+
+    // UPDATE UNTIL HERE
   } catch (error) {
     console.error("Error reading file:", error);
     throw error;
@@ -84,10 +89,12 @@ main(); // Uncomment to run
 const uncalled = () => {
   type opt<A> = O.Option<A>;
   type eth<E, A> = E.Either<E, A>;
-  const x = pipe(
+  const a = pipe(
     [],
     A.map(() => ["", 0] as const satisfies [string, number]),
-    R.fromEntries
+    R.fromEntries,
+    B.isBoolean
   );
-  const y = flow((x: number) => U.modulo(x, 5));
+  const b = flow((x: number) => U.modulo(x, 5));
+  const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
 };
