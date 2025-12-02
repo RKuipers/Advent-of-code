@@ -50,42 +50,37 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 const countDigits = (x: number) => Math.floor(Math.log10(x)) + 1;
 
-const partA = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
+const partA = flow(
+  A.flatMap((range: Range) => {
+    const startD = countDigits(range.start);
+    const endD = countDigits(range.end);
 
-  return pipe(
-    parsed,
-    A.flatMap((range) => {
-      const startD = countDigits(range.start);
-      const endD = countDigits(range.end);
+    if (startD === endD && startD % 2 === 0) return [range];
+    if (startD === endD && startD % 2 !== 0) return [];
+    if (startD + 1 === endD && startD % 2 === 0)
+      return [{ start: range.start, end: Math.pow(10, startD) - 1 }];
+    if (startD + 1 === endD && endD % 2 === 0)
+      return [{ start: Math.pow(10, endD - 1), end: range.end }];
 
-      if (startD === endD && startD % 2 === 0) return [range];
-      if (startD === endD && startD % 2 !== 0) return [];
-      if (startD + 1 === endD && startD % 2 === 0)
-        return [{ start: range.start, end: Math.pow(10, startD) - 1 }];
-      if (startD + 1 === endD && endD % 2 === 0)
-        return [{ start: Math.pow(10, endD - 1), end: range.end }];
+    console.log(`[ERROR] Not supposed to be here`);
+    return [];
+  }),
+  A.flatMap((range) => {
+    const digits = countDigits(range.start);
 
-      console.log(`[ERROR] Not supposed to be here`);
-      return [];
-    }),
-    A.flatMap((range) => {
-      const digits = countDigits(range.start);
+    const startHalf = Math.floor(range.start / Math.pow(10, digits / 2)); // 12345678 / 10^4 = 1234.5678
+    const endHalf = Math.floor(range.end / Math.pow(10, digits / 2));
 
-      const startHalf = Math.floor(range.start / Math.pow(10, digits / 2)); // 12345678 / 10^4 = 1234.5678
-      const endHalf = Math.floor(range.end / Math.pow(10, digits / 2));
-
-      const result: Array<number> = [];
-      for (let i = startHalf; i <= endHalf; i++) {
-        const candidate = i * Math.pow(10, digits / 2) + i;
-        if (candidate >= range.start && candidate <= range.end)
-          result.push(candidate);
-      }
-      return result;
-    }),
-    concatAll(N.MonoidSum)
-  );
-};
+    const result: Array<number> = [];
+    for (let i = startHalf; i <= endHalf; i++) {
+      const candidate = i * Math.pow(10, digits / 2) + i;
+      if (candidate >= range.start && candidate <= range.end)
+        result.push(candidate);
+    }
+    return result;
+  }),
+  concatAll(N.MonoidSum)
+);
 
 // --- Part B Logic ---
 
@@ -95,38 +90,33 @@ const divisors = (num: number): number[] =>
     A.filter((i) => num % i === 0) // keep only divisors
   );
 
-const partB = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
+const partB = flow(
+  A.flatMap((range: Range) => {
+    const result: Array<number> = [];
+    for (let i = range.start; i <= range.end; i++) result.push(i);
+    return result;
+  }),
+  A.filter((x: number) => {
+    if (x < 10) return false;
 
-  return pipe(
-    parsed,
-    A.flatMap((range) => {
-      const result: Array<number> = [];
-      for (let i = range.start; i <= range.end; i++) result.push(i);
-      return result;
-    }),
-    A.filter((x: number) => {
-      if (x < 10) return false;
+    const digits = countDigits(x);
+    const divs = divisors(digits);
 
-      const digits = countDigits(x);
-      const divs = divisors(digits);
-
-      return pipe(
-        divs,
-        A.map((digitCount) => {
-          const firstDigits = Math.floor(x / Math.pow(10, digits - digitCount));
-          const recon = A.reduce<number, number>(
-            firstDigits,
-            (acc, a) => acc * Math.pow(10, digitCount) + firstDigits
-          )(NEA.range(1, digits / digitCount - 1));
-          return x === recon;
-        }),
-        concatAll(B.MonoidAny)
-      );
-    }),
-    concatAll(N.MonoidSum)
-  );
-};
+    return pipe(
+      divs,
+      A.map((digitCount) => {
+        const firstDigits = Math.floor(x / Math.pow(10, digits - digitCount));
+        const recon = A.reduce<number, number>(
+          firstDigits,
+          (acc, a) => acc * Math.pow(10, digitCount) + firstDigits
+        )(NEA.range(1, digits / digitCount - 1));
+        return x === recon;
+      }),
+      concatAll(B.MonoidAny)
+    );
+  }),
+  concatAll(N.MonoidSum)
+);
 
 // --- Execution ---
 
