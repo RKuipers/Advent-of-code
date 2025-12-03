@@ -14,9 +14,10 @@ import * as U from "./utils.js";
 
 // npx tsc && node dist/day1.js
 
-type Entry = number;
+type Entry = Array<number>;
 type ParseType = Array<Entry>;
-const dayNumber = 1;
+type PartType = (parsed: ParseType) => number;
+const dayNumber = 3;
 
 // --- Data Preparation Helper ---
 
@@ -27,11 +28,11 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
     // UPDATE FROM HERE
 
-    const result: number[] = [];
+    const result: number[][] = [];
 
     for (const line of lines) {
-      const parts = line.trim().split(/\s+/); // Split by one or more spaces
-      result.push(parts.length);
+      const parts = line.trim().split(""); // Split by one or more spaces
+      result.push(A.map((c: string) => parseInt(c))(parts));
     }
     return result;
 
@@ -44,19 +45,51 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 // --- Part A Logic ---
 
-const partA = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
-
-  return 0;
-};
+const partA: PartType = flow(
+  A.map((batteries: Array<number>) => {
+    const d1 = pipe(batteries, A.dropRight(1), A.reduce(0, Ord.max(N.Ord)));
+    const d2 = pipe(
+      batteries,
+      A.dropLeftWhile((n) => n !== d1),
+      A.dropLeft(1),
+      A.reduce(0, Ord.max(N.Ord))
+    );
+    return 10 * d1 + d2;
+  }),
+  concatAll(N.MonoidSum)
+);
 
 // --- Part B Logic ---
 
-const partB = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
+const step =
+  (stepsAfter: number, accValue: number) => (batteries: Array<number>) =>
+    pipe(
+      batteries,
+      A.dropRight(stepsAfter),
+      A.reduce(0, Ord.max(N.Ord)), // Only works when you don't get negatives. Otherwise A.reduce(O.none, Ord.max(O.getOrd(N.Ord)))
+      (digit) => ({
+        value: digit + accValue,
+        rem: pipe(
+          batteries,
+          A.dropLeftWhile((n) => n !== digit),
+          A.dropLeft(1)
+        ),
+      })
+    );
 
-  return 0;
-};
+const partB: PartType = flow(
+  A.map((batteries: Array<number>) =>
+    pipe(
+      NEA.range(0, 11),
+      A.reverse,
+      A.reduce({ value: 0, rem: batteries }, ({ value, rem }, i) =>
+        step(i, 10 * value)(rem)
+      ),
+      ({ value }) => value
+    )
+  ),
+  concatAll(N.MonoidSum)
+);
 
 // --- Execution ---
 
@@ -98,9 +131,4 @@ const uncalled = () => {
   );
   const b = flow((x: number) => U.modulo(x, 5));
   const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
-  const d = pipe(
-    [1, 2, 3, -1, 5, -7],
-    A.map(O.some),
-    A.reduce(O.none, Ord.max(O.getOrd(N.Ord)))
-  );
 };
