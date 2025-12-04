@@ -8,21 +8,18 @@ import * as N from "fp-ts/lib/number.js";
 import * as O from "fp-ts/lib/Option.js";
 import * as Ord from "fp-ts/lib/Ord.js";
 import * as R from "fp-ts/lib/Record.js";
+import * as S from "fp-ts/lib/string.js";
 import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
 import * as U from "./utils.js";
-const dayNumber = 3;
+const dayNumber = 4;
 // --- Data Preparation Helper ---
 async function readAndParseData(filePath) {
     try {
         const data = await fs.readFile(path.resolve(filePath), "utf8");
         const lines = data.split("\n").filter((line) => line.trim() !== ""); // Read and filter empty lines
         // UPDATE FROM HERE
-        const result = [];
-        for (const line of lines) {
-            const chars = line.trim().split("");
-            result.push(A.map((c) => parseInt(c))(chars));
-        }
+        const result = pipe(lines, A.mapWithIndex((y, line) => pipe(line.trim().split(""), A.mapWithIndex((x, char) => [`${x},${y}`, char === "@"]), R.fromEntries)), concatAll(R.getUnionMonoid(B.MonoidAny)));
         return result;
         // UPDATE UNTIL HERE
     }
@@ -32,18 +29,25 @@ async function readAndParseData(filePath) {
     }
 }
 // --- Part A Logic ---
-const partA = flow(A.map((batteries) => {
-    const d1 = pipe(batteries, A.dropRight(1), A.reduce(0, Ord.max(N.Ord)));
-    const d2 = pipe(batteries, A.dropLeftWhile((n) => n !== d1), A.dropLeft(1), A.reduce(0, Ord.max(N.Ord)));
-    return 10 * d1 + d2;
-}), concatAll(N.MonoidSum));
+const lookup = (coords) => ([x, y]) => coords[`${x},${y}`] ?? false;
+const isCoord = (arr) => arr.length === 2;
+const offsets = pipe(NEA.range(-1, 1), A.flatMap((dx) => pipe(NEA.range(-1, 1), A.filterMap((dy) => dx !== 0 || dy !== 0
+    ? O.some([dx, dy])
+    : O.none))));
+const neighbors = (coord) => pipe(coord.split(","), A.map(parseInt), (coord) => !isCoord(coord)
+    ? []
+    : pipe(offsets, A.map(([dx, dy]) => [coord[0] + dx, coord[1] + dy])));
+const partA = (coords) => pipe(coords, R.mapWithIndex((coord, v) => v
+    ? pipe(coord, neighbors, A.map(flow(lookup(coords), (b) => (b ? 1 : 0))), concatAll(N.MonoidSum), O.some)
+    : O.none), R.collect(S.Ord)((_, n) => (O.isSome(n) && n.value < 4 ? 1 : 0)), concatAll(N.MonoidSum));
 // --- Part B Logic ---
-const step = (stepsAfter, accValue) => (batteries) => pipe(batteries, A.dropRight(stepsAfter), A.reduce(0, Ord.max(N.Ord)), // Only works when you don't get negatives. Otherwise A.reduce(O.none, Ord.max(O.getOrd(N.Ord)))
-(digit) => ({
-    value: digit + accValue,
-    rem: pipe(batteries, A.dropLeftWhile((n) => n !== digit), A.dropLeft(1)),
-}));
-const partB = flow(A.map((batteries) => pipe(NEA.range(0, 11), A.reverse, A.reduce({ value: 0, rem: batteries }, ({ value, rem }, i) => step(i, 10 * value)(rem)), ({ value }) => value)), concatAll(N.MonoidSum));
+const step = (coords) => pipe(coords, R.mapWithIndex((coord, v) => v
+    ? pipe(coord, neighbors, A.map(flow(lookup(coords), (b) => (b ? 1 : 0))), concatAll(N.MonoidSum), O.some)
+    : O.none), (neighborCount) => pipe(neighborCount, R.collect(S.Ord)((_, n) => (O.isSome(n) && n.value < 4 ? 1 : 0)), concatAll(N.MonoidSum), (removeCount) => [
+    removeCount,
+    pipe(neighborCount, R.map((n) => O.isSome(n) && n.value >= 4)),
+]));
+const partB = (coords, acc) => pipe(coords, step, ([removed, newCoords]) => removed === 0 ? acc : partB(newCoords, acc + removed));
 // --- Execution ---
 async function main() {
     const file = `inputs/day${dayNumber}input.txt`;
@@ -53,7 +57,7 @@ async function main() {
         const startA = performance.now();
         const resultA = partA(parsed);
         const startB = performance.now();
-        const resultB = partB(parsed);
+        const resultB = partB(parsed, 0);
         const end = performance.now();
         console.log(resultA);
         console.log(resultB);
@@ -71,5 +75,6 @@ const uncalled = () => {
     const a = pipe([], A.map(() => ["", 0]), R.fromEntries, B.isBoolean);
     const b = flow((x) => U.modulo(x, 5));
     const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
+    const d = pipe([1, 2, 3, -1, 5, -7], A.map(O.some), A.reduce(O.none, Ord.max(O.getOrd(N.Ord))));
 };
-//# sourceMappingURL=day3.js.map
+//# sourceMappingURL=day4.js.map

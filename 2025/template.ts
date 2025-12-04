@@ -8,7 +8,8 @@ import * as N from "fp-ts/lib/number.js";
 import * as O from "fp-ts/lib/Option.js";
 import * as Ord from "fp-ts/lib/Ord.js";
 import * as R from "fp-ts/lib/Record.js";
-import * as fs from "fs/promises"; // Use promises for asynchronous file reading
+import * as S from "fp-ts/lib/string.js";
+import * as fs from "fs/promises";
 import * as path from "path";
 import * as U from "./utils.js";
 
@@ -16,6 +17,7 @@ import * as U from "./utils.js";
 
 type Entry = number;
 type ParseType = Array<Entry>;
+type PartType = (parsed: ParseType) => number;
 const dayNumber = 1;
 
 // --- Data Preparation Helper ---
@@ -44,19 +46,11 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 // --- Part A Logic ---
 
-const partA = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
-
-  return 0;
-};
+const partA: PartType = flow((x) => 0);
 
 // --- Part B Logic ---
 
-const partB = (parsed: ParseType): number => {
-  // USE parsed.x if parsed type is an object
-
-  return 0;
-};
+const partB: PartType = flow((x) => 0);
 
 // --- Execution ---
 
@@ -100,7 +94,7 @@ const uncalled = () => {
   const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
   const d = pipe(
     [1, 2, 3, -1, 5, -7],
-    A.map(O.some),
-    A.reduce(O.none, Ord.max(O.getOrd(N.Ord)))
+    A.map(flow(JSON.stringify, O.some)),
+    A.reduce(O.none, Ord.max(O.getOrd(S.Ord)))
   );
 };

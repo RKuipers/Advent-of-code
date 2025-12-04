@@ -31,8 +31,8 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
     const result: number[][] = [];
 
     for (const line of lines) {
-      const parts = line.trim().split(""); // Split by one or more spaces
-      result.push(A.map((c: string) => parseInt(c))(parts));
+      const chars = line.trim().split("");
+      result.push(A.map((c: string) => parseInt(c))(chars));
     }
     return result;
 

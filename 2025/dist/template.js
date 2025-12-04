@@ -6,6 +6,7 @@ import { concatAll } from "fp-ts/lib/Monoid.js";
 import * as NEA from "fp-ts/lib/NonEmptyArray.js";
 import * as N from "fp-ts/lib/number.js";
 import * as O from "fp-ts/lib/Option.js";
+import * as Ord from "fp-ts/lib/Ord.js";
 import * as R from "fp-ts/lib/Record.js";
 import * as fs from "fs/promises"; // Use promises for asynchronous file reading
 import * as path from "path";
@@ -31,15 +32,9 @@ async function readAndParseData(filePath) {
     }
 }
 // --- Part A Logic ---
-const partA = (parsed) => {
-    // USE parsed.x if parsed type is an object
-    return 0;
-};
+const partA = flow((x) => 0);
 // --- Part B Logic ---
-const partB = (parsed) => {
-    // USE parsed.x if parsed type is an object
-    return 0;
-};
+const partB = flow((x) => 0);
 // --- Execution ---
 async function main() {
     const file = `inputs/day${dayNumber}input.txt`;
@@ -67,5 +62,6 @@ const uncalled = () => {
     const a = pipe([], A.map(() => ["", 0]), R.fromEntries, B.isBoolean);
     const b = flow((x) => U.modulo(x, 5));
     const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
+    const d = pipe([1, 2, 3, -1, 5, -7], A.map(O.some), A.reduce(O.none, Ord.max(O.getOrd(N.Ord))));
 };
 //# sourceMappingURL=template.js.map
