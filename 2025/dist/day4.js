@@ -9,7 +9,7 @@ import * as O from "fp-ts/lib/Option.js";
 import * as Ord from "fp-ts/lib/Ord.js";
 import * as R from "fp-ts/lib/Record.js";
 import * as S from "fp-ts/lib/string.js";
-import * as fs from "fs/promises"; // Use promises for asynchronous file reading
+import * as fs from "fs/promises";
 import * as path from "path";
 import * as U from "./utils.js";
 const dayNumber = 4;

@@ -16,10 +16,9 @@ import * as U from "./utils.js";
 
 // npx tsc && node dist/day1.js
 
-type Entry = number;
-type ParseType = Array<Entry>;
+type ParseType = { ranges: Array<[number, number]>; entries: Array<number> };
 type PartType = (parsed: ParseType) => number;
-const dayNumber = 1;
+const dayNumber = 5;
 
 // --- Data Preparation Helper ---
 
@@ -30,13 +29,16 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
     // UPDATE FROM HERE
 
-    const result: number[] = [];
+    const ranges: Array<[number, number]> = [];
+    const entries: Array<number> = [];
 
     for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      result.push(parts.length);
+      if (line.includes("-")) {
+        const parts = line.trim().split("-");
+        ranges.push([parseInt(parts[0]!), parseInt(parts[1]!)]);
+      } else if (line.trim().length > 0) entries.push(parseInt(line.trim()));
     }
-    return result;
+    return { ranges, entries };
 
     // UPDATE UNTIL HERE
   } catch (error) {
@@ -47,13 +49,63 @@ async function readAndParseData(filePath: string): Promise<ParseType> {
 
 // --- Part A Logic ---
 
-const partA: PartType = flow((x) => 0);
-const partA2 = (parsed: ParseType): number => pipe(parsed, (x) => 0);
+const inRange =
+  (x: number) =>
+  (range: [number, number]): boolean =>
+    x >= range[0] && x <= range[1];
+
+const partA = (parsed: {
+  ranges: Array<[number, number]>;
+  entries: Array<number>;
+}): number =>
+  pipe(
+    parsed.entries,
+    A.map((entry) =>
+      pipe(
+        parsed.ranges,
+        A.findFirst(inRange(entry)),
+        O.match(
+          () => 0,
+          () => 1
+        )
+      )
+    ),
+    concatAll(N.MonoidSum)
+  );
 
 // --- Part B Logic ---
 
-const partB: PartType = flow((x) => 0);
-const partB2 = (parsed: ParseType): number => pipe(parsed, (x) => 0);
+const rangeOrd = Ord.contramap(T.fst)(N.Ord);
+
+const mergeRanges =
+  (range1: [number, number]) =>
+  (range2: [number, number]): Array<[number, number]> =>
+    range1[1] < range2[0] || range1[0] > range2[1]
+      ? [range1, range2]
+      : [[Math.min(range1[0], range2[0]), Math.max(range1[1], range2[1])]];
+
+const partB = (parsed: ParseType): number =>
+  pipe(
+    parsed.ranges,
+    A.sort(rangeOrd),
+    A.reduce<[number, number], Array<[number, number]>>([], (acc, next) =>
+      acc.length === 0
+        ? [next]
+        : [
+            ...A.dropRight(1)(acc),
+            ...pipe(
+              acc,
+              A.last,
+              O.match(
+                () => [next],
+                (last) => mergeRanges(last)(next)
+              )
+            ),
+          ]
+    ),
+    A.map(([min, max]) => max - min + 1),
+    concatAll(N.MonoidSum)
+  );
 
 // --- Execution ---
 
@@ -91,8 +143,6 @@ const uncalled = () => {
     [],
     A.map(() => ["", 0] as const satisfies [string, number]),
     R.fromEntries,
-    R.toEntries,
-    A.map(T.fst),
     B.isBoolean
   );
   const b = flow((x: number) => U.modulo(x, 5));
