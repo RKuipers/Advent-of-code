@@ -13,18 +13,36 @@ import * as T from "fp-ts/lib/Tuple.js";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as U from "./utils.js";
-const dayNumber = 1;
+const dayNumber = 6;
+const transpose = (list) => pipe(list, A.reduce(A.replicate((list[0] ?? []).length, []), (acc, next) => pipe(A.zip(acc, next), A.map(([a, n]) => [...a, n]))));
 // --- Data Preparation Helper ---
-async function readAndParseData(filePath) {
+async function readAndParseDataA(filePath) {
     try {
         const data = await fs.readFile(path.resolve(filePath), "utf8");
         const lines = data.split("\n").filter((line) => line.trim() !== ""); // Read and filter empty lines
         // UPDATE FROM HERE
-        const result = [];
-        for (const line of lines) {
-            const parts = line.trim().split(/\s+/);
-            result.push(parts.length);
-        }
+        const symbols = pipe(lines, A.last, O.match(() => [], (line) => line.trim().split(/\s+/)), A.map((char) => (char === "*" ? "*" : "+")));
+        const result = pipe(lines, A.dropRight(1), A.map((line) => line.trim().split(/\s+/)), transpose, A.map(A.map((entry) => parseInt(entry.trim()))), A.zip(symbols));
+        return result;
+        // UPDATE UNTIL HERE
+    }
+    catch (error) {
+        console.error("Error reading file:", error);
+        throw error;
+    }
+}
+async function readAndParseDataB(filePath) {
+    try {
+        const data = await fs.readFile(path.resolve(filePath), "utf8");
+        const lines = data.split("\n").filter((line) => line.trim() !== ""); // Read and filter empty lines
+        // UPDATE FROM HERE
+        const symbols = pipe(lines, A.last, O.match(() => [], (line) => line.trim().split(/\s+/)), A.map((char) => (char === "*" ? "*" : "+")), A.reverse);
+        const result = pipe(lines, A.dropRight(1), A.map((line) => line.split("")), transpose, A.reverse, A.map((col) => parseInt(col.join(""))), A.reduce([], (acc, next) => isNaN(next)
+            ? [...acc, []]
+            : [
+                ...A.dropRight(1)(acc),
+                pipe(acc, A.last, O.match(() => [next], (last) => [...last, next])),
+            ]), A.zip(symbols));
         return result;
         // UPDATE UNTIL HERE
     }
@@ -34,25 +52,20 @@ async function readAndParseData(filePath) {
     }
 }
 // --- Part A Logic ---
-const partA = flow((x) => 0);
-const partA2 = (parsed) => pipe(parsed, (x) => 0);
-// --- Part B Logic ---
-const partB = flow((x) => 0);
-const partB2 = (parsed) => pipe(parsed, (x) => 0);
+const partAB = flow(A.map(([numbers, symbol]) => pipe(numbers, concatAll(symbol === "+" ? N.MonoidSum : N.MonoidProduct))), concatAll(N.MonoidSum));
 // --- Execution ---
 async function main() {
     const file = `inputs/day${dayNumber}input.txt`;
     try {
-        const startParse = performance.now();
-        const parsed = await readAndParseData(file);
         const startA = performance.now();
-        const resultA = partA(parsed);
+        const parsedA = await readAndParseDataA(file);
+        const resultA = partAB(parsedA);
         const startB = performance.now();
-        const resultB = partB(parsed);
+        const parsedB = await readAndParseDataB(file);
+        const resultB = partAB(parsedB);
         const end = performance.now();
         console.log(resultA);
         console.log(resultB);
-        console.log(`Parsing took ${(startA - startParse).toFixed(3)}ms`);
         console.log(`Part A took ${(startB - startA).toFixed(3)}ms`);
         console.log(`Part B took ${(end - startB).toFixed(3)}ms`);
     }
@@ -68,4 +81,4 @@ const uncalled = () => {
     const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
     const d = pipe([1, 2, 3, -1, 5, -7], A.map(flow(JSON.stringify, O.some)), A.reduce(O.none, Ord.max(O.getOrd(S.Ord))));
 };
-//# sourceMappingURL=template.js.map
+//# sourceMappingURL=day6.js.map
