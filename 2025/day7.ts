@@ -77,7 +77,7 @@ const union =
     A.getUnionSemigroup(N.Eq).concat(a, b);
 const difference = A.difference(N.Eq);
 
-const step =
+const stepA =
   (splits: Array<number>) =>
   (beams: Array<number>): { newBeams: Array<number>; newSplits: number } =>
     pipe(beams, intersection(splits), (splitBeams) =>
@@ -102,7 +102,7 @@ const partA = (parsed: ParseType): number =>
   pipe(
     NEA.range(0, parsed.splits.length),
     A.reduce({ splitCount: 0, beams: [parsed.start] }, (acc, row) =>
-      pipe(acc.beams, step(parsed.splits[row] ?? []), (result) => ({
+      pipe(acc.beams, stepA(parsed.splits[row] ?? []), (result) => ({
         splitCount: acc.splitCount + result.newSplits,
         beams: result.newBeams,
       }))
@@ -112,8 +112,31 @@ const partA = (parsed: ParseType): number =>
 
 // --- Part B Logic ---
 
-const partB: PartType = flow((x) => 0);
-const partB2 = (parsed: ParseType): number => pipe(parsed, (x) => 0);
+const stepB = (splits: Array<Array<number>>) => {
+  const cache = new Map<string, number>();
+
+  const go = ([x, y]: [number, number]): number =>
+    pipe(
+      `${x},${y}`,
+      (key) =>
+        cache.has(key)
+          ? cache.get(key) ?? 0
+          : splits[y]
+          ? A.elem(N.Eq)(x)(splits[y])
+            ? go([x - 1, y + 1]) + go([x + 1, y + 1])
+            : go([x, y + 1])
+          : 1,
+      (result) => {
+        cache.set(`${x},${y}`, result);
+        return result;
+      }
+    );
+
+  return go;
+};
+
+const partB = (parsed: ParseType): number =>
+  stepB(parsed.splits)([parsed.start, 0]);
 
 // --- Execution ---
 

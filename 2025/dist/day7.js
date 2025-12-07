@@ -34,17 +34,30 @@ async function readAndParseData(filePath) {
 const intersection = (a) => (b) => A.getIntersectionSemigroup(N.Eq).concat(a, b);
 const union = (a) => (b) => A.getUnionSemigroup(N.Eq).concat(a, b);
 const difference = A.difference(N.Eq);
-const step = (splits) => (beams) => pipe(beams, intersection(splits), (splitBeams) => pipe(splitBeams, A.flatMap((x) => [x - 1, x + 1]), (newBeams) => pipe(beams, difference(splitBeams), union(newBeams), A.uniq(N.Eq), (b) => ({
+const stepA = (splits) => (beams) => pipe(beams, intersection(splits), (splitBeams) => pipe(splitBeams, A.flatMap((x) => [x - 1, x + 1]), (newBeams) => pipe(beams, difference(splitBeams), union(newBeams), A.uniq(N.Eq), (b) => ({
     newBeams: b,
     newSplits: splitBeams.length,
 }))));
-const partA = (parsed) => pipe(NEA.range(0, parsed.splits.length), A.reduce({ splitCount: 0, beams: [parsed.start] }, (acc, row) => pipe(acc.beams, step(parsed.splits[row] ?? []), (result) => ({
+const partA = (parsed) => pipe(NEA.range(0, parsed.splits.length), A.reduce({ splitCount: 0, beams: [parsed.start] }, (acc, row) => pipe(acc.beams, stepA(parsed.splits[row] ?? []), (result) => ({
     splitCount: acc.splitCount + result.newSplits,
     beams: result.newBeams,
 }))), (result) => result.splitCount);
 // --- Part B Logic ---
-const partB = flow((x) => 0);
-const partB2 = (parsed) => pipe(parsed, (x) => 0);
+const stepB = (splits) => {
+    const cache = new Map();
+    const go = ([x, y]) => pipe(`${x},${y}`, (key) => cache.has(key)
+        ? cache.get(key) ?? 0
+        : splits[y]
+            ? A.elem(N.Eq)(x)(splits[y])
+                ? go([x - 1, y + 1]) + go([x + 1, y + 1])
+                : go([x, y + 1])
+            : 1, (result) => {
+        cache.set(`${x},${y}`, result);
+        return result;
+    });
+    return go;
+};
+const partB = (parsed) => stepB(parsed.splits)([parsed.start, 0]);
 // --- Execution ---
 async function main() {
     const file = `inputs/day${dayNumber}input.txt`;
