@@ -1,6 +1,7 @@
 import * as A from "fp-ts/lib/Array.js";
 import * as B from "fp-ts/lib/boolean.js";
 import * as E from "fp-ts/lib/Either.js";
+import type { Eq } from "fp-ts/lib/Eq.js";
 import { flow, pipe } from "fp-ts/lib/function.js";
 import { concatAll } from "fp-ts/lib/Monoid.js";
 import * as NEA from "fp-ts/lib/NonEmptyArray.js";
@@ -102,4 +103,5 @@ const uncalled = () => {
     A.map(flow(JSON.stringify, O.some)),
     A.reduce(O.none, Ord.max(O.getOrd(S.Ord)))
   );
+  const e: Eq<number> = N.Eq;
 };
