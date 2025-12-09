@@ -67,5 +67,6 @@ const uncalled = () => {
     const b = flow((x) => U.modulo(x, 5));
     const c = pipe(NEA.range(1, 5), concatAll(N.MonoidSum));
     const d = pipe([1, 2, 3, -1, 5, -7], A.map(flow(JSON.stringify, O.some)), A.reduce(O.none, Ord.max(O.getOrd(S.Ord))));
+    const e = N.Eq;
 };
 //# sourceMappingURL=template.js.map
