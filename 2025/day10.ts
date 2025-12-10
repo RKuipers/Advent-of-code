@@ -13,6 +13,7 @@ import * as S from "fp-ts/lib/string.js";
 import * as T from "fp-ts/lib/Tuple.js";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { solve, type Model } from "yalps";
 import * as U from "./utils.js";
 
 // npx tsc && node dist/day1.js
@@ -24,9 +25,7 @@ type Entry = {
   joltages: Array<number>;
 };
 type ParseType = Array<Entry>;
-type PartType = (parsed: ParseType) => number;
 type AState = { buttons: Array<Button>; lights: Array<boolean>; depth: number };
-type BState = { jolts: Array<number>; depth: number };
 const dayNumber = 10;
 
 // --- Data Preparation Helper ---
@@ -134,107 +133,47 @@ const partA = (parsed: ParseType): number =>
 
 // --- Part B Logic ---
 
-const BStateEq: Eq<BState> = {
-  equals: (a, b) => A.getEq(N.Eq).equals(a.jolts, b.jolts),
-};
+const mkModel = (entry: Entry): Model => {
+  const constraints: Model["constraints"] = pipe(
+    entry.joltages,
+    A.mapWithIndex((i, jolt): [string, { min: number; max: number }] => [
+      `j${i}`,
+      { min: jolt, max: jolt },
+    ]),
+    R.fromEntries
+  );
 
-const pressButtonB =
-  (jolts: Array<number>) =>
-  (button: Button): Array<number> =>
-    pipe(
-      button,
-      A.reduce(jolts, (ls, l: number) =>
-        pipe(
-          ls,
-          A.mapWithIndex((i, x) => (i === l ? x + 1 : x))
-        )
-      )
-    );
-
-const stepB =
-  (buttons: Array<Button>) =>
-  ({ jolts, depth }: BState): Array<BState> =>
-    pipe(
-      buttons,
-      A.map(
-        (b): BState =>
-          pipe(b, pressButtonB(jolts), (newJolts) => ({
-            jolts: newJolts,
-            depth: depth + 1,
-          }))
-      )
-    );
-
-const BFSB =
-  (goal: Array<number>, buttons: Array<Button>) =>
-  (seenJolts: Array<Array<number>>) =>
-  (states: Array<BState>): number =>
-    pipe(
-      states,
-      A.filter(({ jolts }) => !A.elem(A.getEq(N.Eq))(jolts)(seenJolts)),
-      // (x) => {
-      //   console.log(
-      //     `Entered depth ${states[0]!.depth} with ${
-      //       states.length
-      //     } states, filtered out ${states.length - x.length}. Saw ${
-      //       seenJolts.length
-      //     } total states.`
-      //   );
-      //   return x;
-      // },
-      A.filterMap(
-        (state): O.Option<E.Either<number, BState>> =>
-          pipe(
-            state.jolts,
-            A.zip(goal),
-            A.map(([sj, gj]) =>
-              sj > gj ? O.none : sj === gj ? O.some(true) : O.some(false)
-            ),
-            A.sequence(O.Applicative),
-            O.map(
-              flow(concatAll(B.MonoidAll), (foundGoal) =>
-                foundGoal ? E.left(state.depth) : E.right(state)
-              )
-            )
-          )
+  const variables: Model["variables"] = pipe(
+    entry.buttons,
+    A.mapWithIndex((i, button): [string, Record<string, number>] => [
+      `b${i}`,
+      pipe(
+        button,
+        A.map((b): [string, number] => [`j${b}`, 1]),
+        A.concat<[string, number]>([["obj", 1]]),
+        R.fromEntries
       ),
-      A.sequence(E.Applicative),
-      (foundGoalOrStates) =>
-        E.isLeft(foundGoalOrStates)
-          ? foundGoalOrStates.left
-          : pipe(
-              foundGoalOrStates.right,
-              A.flatMap(stepB(buttons)),
-              A.uniq(BStateEq),
-              BFSB(
-                goal,
-                buttons
-              )(
-                pipe(
-                  foundGoalOrStates.right,
-                  A.map(({ jolts }) => jolts),
-                  A.concat(seenJolts),
-                  A.uniq(A.getEq(N.Eq))
-                )
-              )
-            )
-    );
+    ]),
+    R.fromEntries
+  );
 
-// TODO: Use YALPS (ILP Solver)
+  return {
+    direction: "minimize" as const,
+    objective: "obj",
+    constraints,
+    variables,
+    // Key for ILP: Mark variables that must be integers
+    integers: pipe(
+      entry.buttons,
+      A.mapWithIndex((i, b) => `b${i}`)
+    ),
+  };
+};
 
 const partB = (parsed: ParseType): number =>
   pipe(
     parsed,
-    A.mapWithIndex((i, entry) => {
-      const result = BFSB(entry.joltages, entry.buttons)([])([
-        {
-          jolts: A.replicate(entry.joltages.length, 0),
-          depth: 0,
-        },
-      ]);
-      console.log(`Entry ${i} result: ${result}`);
-      return result;
-    }),
+    A.map(flow(mkModel, solve, (x) => x.result)),
     concatAll(N.MonoidSum)
   );
 

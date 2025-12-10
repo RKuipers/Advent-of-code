@@ -12,6 +12,7 @@ import * as S from "fp-ts/lib/string.js";
 import * as T from "fp-ts/lib/Tuple.js";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { solve } from "yalps";
 import * as U from "./utils.js";
 const dayNumber = 10;
 // --- Data Preparation Helper ---
@@ -55,38 +56,39 @@ const partA = (parsed) => pipe(parsed, A.map((entry) => BFSA(entry.lights)([
     },
 ])), concatAll(N.MonoidSum));
 // --- Part B Logic ---
-const BStateEq = {
-    equals: (a, b) => A.getEq(N.Eq).equals(a.jolts, b.jolts),
+// const model = {
+//   direction: 'maximize' as const,
+//   objective: 'profit',
+//   constraints: {
+//     wood: { max: 300 },
+//     labor: { max: 110 },
+//   },
+//   variables: {
+//     table: { wood: 30, labor: 5, profit: 1200 },
+//     dresser: { wood: 20, labor: 10, profit: 1600 },
+//   },
+//   // Key for ILP: Mark variables that must be integers
+//   integers: ['table', 'dresser'],
+// };
+const mkModel = (entry) => {
+    const constraints = pipe(entry.joltages, A.mapWithIndex((i, jolt) => [
+        `j${i}`,
+        { min: jolt, max: jolt },
+    ]), R.fromEntries);
+    const variables = pipe(entry.buttons, A.mapWithIndex((i, button) => [
+        `b${i}`,
+        pipe(button, A.map((b) => [`j${b}`, 1]), A.concat([["obj", 1]]), R.fromEntries),
+    ]), R.fromEntries);
+    return {
+        direction: "minimize",
+        objective: "obj",
+        constraints,
+        variables,
+        // Key for ILP: Mark variables that must be integers
+        integers: pipe(entry.buttons, A.mapWithIndex((i, b) => `b${i}`)),
+    };
 };
-const pressButtonB = (jolts) => (button) => pipe(button, A.reduce(jolts, (ls, l) => pipe(ls, A.mapWithIndex((i, x) => (i === l ? x + 1 : x)))));
-const stepB = (buttons) => ({ jolts, depth }) => pipe(buttons, A.map((b) => pipe(b, pressButtonB(jolts), (newJolts) => ({
-    jolts: newJolts,
-    depth: depth + 1,
-}))));
-const BFSB = (goal, buttons) => (seenJolts) => (states) => pipe(states, A.filter(({ jolts }) => !A.elem(A.getEq(N.Eq))(jolts)(seenJolts)), 
-// (x) => {
-//   console.log(
-//     `Entered depth ${states[0]!.depth} with ${
-//       states.length
-//     } states, filtered out ${states.length - x.length}. Saw ${
-//       seenJolts.length
-//     } total states.`
-//   );
-//   return x;
-// },
-A.filterMap((state) => pipe(state.jolts, A.zip(goal), A.map(([sj, gj]) => sj > gj ? O.none : sj === gj ? O.some(true) : O.some(false)), A.sequence(O.Applicative), O.map(flow(concatAll(B.MonoidAll), (foundGoal) => foundGoal ? E.left(state.depth) : E.right(state))))), A.sequence(E.Applicative), (foundGoalOrStates) => E.isLeft(foundGoalOrStates)
-    ? foundGoalOrStates.left
-    : pipe(foundGoalOrStates.right, A.flatMap(stepB(buttons)), A.uniq(BStateEq), BFSB(goal, buttons)(pipe(foundGoalOrStates.right, A.map(({ jolts }) => jolts), A.concat(seenJolts), A.uniq(A.getEq(N.Eq))))));
-const partB = (parsed) => pipe(parsed, A.mapWithIndex((i, entry) => {
-    const result = BFSB(entry.joltages, entry.buttons)([])([
-        {
-            jolts: A.replicate(entry.joltages.length, 0),
-            depth: 0,
-        },
-    ]);
-    console.log(`Entry ${i} result: ${result}`);
-    return result;
-}), concatAll(N.MonoidSum));
+const partB = (parsed) => pipe(parsed, A.map(flow(mkModel, solve, (x) => x.result)), concatAll(N.MonoidSum));
 // --- Execution ---
 async function main() {
     const file = `inputs/day${dayNumber}input.txt`;

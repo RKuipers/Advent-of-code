@@ -17,6 +17,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "fp-ts": "^2.16.11"
+    "fp-ts": "^2.16.11",
+    "yalps": "^0.6.3"
   }
 }
