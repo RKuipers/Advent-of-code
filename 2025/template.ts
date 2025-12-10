@@ -61,25 +61,21 @@ const partB2 = (parsed: ParseType): number => pipe(parsed, (x) => 0);
 async function main() {
   const file = `inputs/day${dayNumber}input.txt`;
 
-  try {
-    const startParse = performance.now();
-    const parsed = await readAndParseData(file);
+  const startParse = performance.now();
+  const parsed = await readAndParseData(file);
 
-    const startA = performance.now();
-    const resultA = partA(parsed);
+  const startA = performance.now();
+  const resultA = partA(parsed);
 
-    const startB = performance.now();
-    const resultB = partB(parsed);
-    const end = performance.now();
+  const startB = performance.now();
+  const resultB = partB(parsed);
+  const end = performance.now();
 
-    console.log(resultA);
-    console.log(resultB);
-    console.log(`Parsing took ${(startA - startParse).toFixed(3)}ms`);
-    console.log(`Part A took ${(startB - startA).toFixed(3)}ms`);
-    console.log(`Part B took ${(end - startB).toFixed(3)}ms`);
-  } catch (e) {
-    console.error("Execution failed.");
-  }
+  console.log(resultA);
+  console.log(resultB);
+  console.log(`Parsing took ${(startA - startParse).toFixed(3)}ms`);
+  console.log(`Part A took ${(startB - startA).toFixed(3)}ms`);
+  console.log(`Part B took ${(end - startB).toFixed(3)}ms`);
 }
 
 main(); // Uncomment to run
