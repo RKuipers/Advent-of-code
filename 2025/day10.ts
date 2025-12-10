@@ -162,7 +162,6 @@ const mkModel = (entry: Entry): Model => {
     objective: "obj",
     constraints,
     variables,
-    // Key for ILP: Mark variables that must be integers
     integers: pipe(
       entry.buttons,
       A.mapWithIndex((i, b) => `b${i}`)
