@@ -56,20 +56,6 @@ const partA = (parsed) => pipe(parsed, A.map((entry) => BFSA(entry.lights)([
     },
 ])), concatAll(N.MonoidSum));
 // --- Part B Logic ---
-// const model = {
-//   direction: 'maximize' as const,
-//   objective: 'profit',
-//   constraints: {
-//     wood: { max: 300 },
-//     labor: { max: 110 },
-//   },
-//   variables: {
-//     table: { wood: 30, labor: 5, profit: 1200 },
-//     dresser: { wood: 20, labor: 10, profit: 1600 },
-//   },
-//   // Key for ILP: Mark variables that must be integers
-//   integers: ['table', 'dresser'],
-// };
 const mkModel = (entry) => {
     const constraints = pipe(entry.joltages, A.mapWithIndex((i, jolt) => [
         `j${i}`,
@@ -84,7 +70,6 @@ const mkModel = (entry) => {
         objective: "obj",
         constraints,
         variables,
-        // Key for ILP: Mark variables that must be integers
         integers: pipe(entry.buttons, A.mapWithIndex((i, b) => `b${i}`)),
     };
 };
