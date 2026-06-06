@@ -535,9 +535,10 @@ if __name__ == "__main__":
         top_text="**Top 5 Games by number of achievements**",
     )
     make_histo(
-        data={game["name"]: game["date"].year for game in games_with_metadata.values()},
+        data={game["name"]: game["date"].year for game in games_with_metadata.values() if not game["date"] is None},
         title="Release Year",
         xlabel="Year",
+        max_value=2026,
     )
     make_histo(
         data={
