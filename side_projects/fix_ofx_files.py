@@ -1,3 +1,4 @@
+# Usage: python C:\Users\Robin\OneDrive\Documenten\GitHub\Advent-of-code\side_projects\fix_ofx_files.py 'C:\Users\Robin\Downloads\TransactionHistory (17).ofx'
 from ofxtools.Parser import OFXTree
 from ofxtools.header import make_header
 from rich import print
