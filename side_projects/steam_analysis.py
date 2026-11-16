@@ -1,3 +1,9 @@
+'''
+TODO:
+- Check Achievement sets still work
+- Clean up logging (get all data for a game in 1 go, log which games missing some/all data, report when plots are generated)
+- Clean up histogram code (2 functions with many paths is ugly)
+'''
 import string
 from collections import Counter
 import requests
@@ -55,7 +61,7 @@ MISSING_RELEASE_DATES = {
 
 @cache.cachify(lifetime=7)
 def ping_API(url: str, params: dict):
-    print("Pinging Steam API...")
+    # ("Pinging Steam API...")
 
     try:
         response = requests.get(url, params=params)
@@ -66,7 +72,7 @@ def ping_API(url: str, params: dict):
         print(f"Error accessing Steam API: {e}")
         return None
 
-    print("Got a response.")
+    # print("Got a response.")
 
     return data
 

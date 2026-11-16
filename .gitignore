@@ -4,3 +4,4 @@
 *.env
 cachify/*
 *.pyc
+.vscode/settings.json
